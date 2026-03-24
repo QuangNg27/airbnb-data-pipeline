@@ -1,0 +1,5 @@
+pyspark
+boto3
+dbt-core
+dbt-redshift
+apache-airflow
