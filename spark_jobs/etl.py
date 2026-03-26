@@ -195,16 +195,6 @@ def clean_data(df):
         coalesce(col("beds"), col("accommodates"))
     )
 
-    df = df.withColumn(
-        "amenities_clean",
-        regexp_replace("amenities", '""', '"')
-    )
-
-    df = df.withColumn(
-        "amenities_array",
-        from_json(col("amenities_clean"), ArrayType(StringType()))
-    )
-
     df = df.fillna({
         "name": "No name",
         "description": "No description",
