@@ -1,7 +1,7 @@
 from pyspark.sql import SparkSession
 import os
 from dotenv import load_dotenv
-from pyspark.sql.functions import coalesce, col, count, from_json, greatest, least, regexp_extract, to_date, regexp_replace, when
+from pyspark.sql.functions import coalesce, col, count, greatest, least, regexp_extract, to_date, regexp_replace, when
 from pyspark.sql.types import *
 from pyspark.sql.window import Window
 
@@ -114,25 +114,14 @@ def create_spark_session():
         .getOrCreate()
     )
 
-def read_data_S3(spark, path):
-    return spark.read.csv(
-        path,
-        header=True,
-        inferSchema=True,
-        quote='"',
-        escape='"',
-        multiLine=True
-    )
-
-def apply_schema(df, schema):
-    for field in schema.fields:
-        col_name = field.name
-        col_type = field.dataType
-
-        if col_name in df.columns:
-            df = df.withColumn(col_name, col(col_name).cast(col_type))
-
-    return df
+def read_data_S3(spark, path, schema):
+    return spark.read \
+        .option("header", True) \
+        .option("multiLine", True) \
+        .option("quote", '"') \
+        .option("escape", '"') \
+        .schema(schema) \
+        .csv(path)
 
 def clean_data(df):
     cast_dict = {
@@ -244,8 +233,7 @@ def clean_data(df):
 
 def main():
     spark = create_spark_session()
-    df = read_data_S3(spark, BRONZE_PATH)
-    df = apply_schema(df, listing_schema)
+    df = read_data_S3(spark, BRONZE_PATH, listing_schema)
     df_cleaned = clean_data(df)
 
     # Write the cleaned data back to S3 in Parquet format
