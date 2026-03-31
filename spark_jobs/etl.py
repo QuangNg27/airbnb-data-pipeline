@@ -145,10 +145,10 @@ def clean_data(df):
     # Fix anomaly
     df = df.withColumn(
         "min_tmp",
-        least(col("minimum_nights"), col("maximum_nights"))
+        least(col("minimum_nights"), col("maximum_nights")).cast(IntegerType())
     ).withColumn(
         "max_tmp",
-        greatest(col("minimum_nights"), col("maximum_nights"))
+        greatest(col("minimum_nights"), col("maximum_nights")).cast(IntegerType())
     ).drop(
         "minimum_nights", "maximum_nights"
     ).withColumnRenamed(
@@ -203,7 +203,7 @@ def clean_data(df):
         "host_listings_count",
         when(
             col("host_listings_count").isNull(),
-            count("*").over(w)
+            count("*").over(w).cast(IntegerType())
         ).otherwise(col("host_listings_count"))
     )
 
@@ -229,7 +229,92 @@ def clean_data(df):
     df = df.filter(col("first_review").isNotNull() & col("last_review").isNotNull())
     df = df.filter(col("minimum_minimum_nights").isNotNull() & col("maximum_minimum_nights").isNotNull() & col("minimum_maximum_nights").isNotNull() & col("maximum_maximum_nights").isNotNull())
 
-    return df
+    res = df.select(
+        col("id").cast("long"),
+        col("listing_url"),
+        col("scrape_id").cast("long"),
+        col("last_scraped"),
+        col("source"),
+        col("name"),
+        col("description"),
+        col("picture_url"),
+
+        col("host_id").cast("long"),
+        col("host_url"),
+        col("host_since"),
+        col("host_response_time"),
+        col("host_response_rate").cast("decimal(10,2)"),
+        col("host_acceptance_rate").cast("decimal(10,2)"),
+        col("host_is_superhost"),
+        col("host_listings_count").cast("int"),
+
+        col("neighbourhood_cleansed"),
+        col("neighbourhood_group_cleansed"),
+
+        col("latitude").cast("double"),
+        col("longitude").cast("double"),
+
+        col("property_type"),
+        col("room_type"),
+        col("accommodates").cast("int"),
+
+        col("bathrooms").cast("double"),
+        col("bathrooms_text"),
+        col("bedrooms").cast("int"),
+        col("beds").cast("int"),
+
+        col("amenities"),
+        col("price").cast("decimal(10,2)"),
+
+        col("minimum_minimum_nights").cast("int"),
+        col("maximum_minimum_nights").cast("int"),
+        col("minimum_maximum_nights").cast("int"),
+        col("maximum_maximum_nights").cast("int"),
+
+        col("minimum_nights_avg_ntm").cast("double"),
+        col("maximum_nights_avg_ntm").cast("double"),
+
+        col("has_availability"),
+        col("availability_30").cast("int"),
+        col("availability_60").cast("int"),
+        col("availability_90").cast("int"),
+        col("availability_365").cast("int"),
+
+        col("calendar_last_scraped"),
+
+        col("number_of_reviews").cast("int"),
+        col("number_of_reviews_ltm").cast("int"),
+        col("number_of_reviews_l30d").cast("int"),
+        col("availability_eoy").cast("int"),
+        col("number_of_reviews_ly").cast("int"),
+
+        col("estimated_occupancy_l365d").cast("int"),
+        col("estimated_revenue_l365d").cast("int"),
+
+        col("first_review"),
+        col("last_review"),
+
+        col("review_scores_rating").cast("double"),
+        col("review_scores_accuracy").cast("double"),
+        col("review_scores_cleanliness").cast("double"),
+        col("review_scores_checkin").cast("double"),
+        col("review_scores_communication").cast("double"),
+        col("review_scores_location").cast("double"),
+        col("review_scores_value").cast("double"),
+
+        col("instant_bookable"),
+
+        col("calculated_host_listings_count").cast("int"),
+        col("calculated_host_listings_count_entire_homes").cast("int"),
+        col("calculated_host_listings_count_private_rooms").cast("int"),
+        col("calculated_host_listings_count_shared_rooms").cast("int"),
+
+        col("reviews_per_month").cast("double"),
+
+        col("minimum_nights").cast("int"),
+        col("maximum_nights").cast("int")
+)
+    return res
 
 def main():
     spark = create_spark_session()
@@ -239,7 +324,6 @@ def main():
     # Write the cleaned data back to S3 in Parquet format
     df_cleaned.write \
         .mode("overwrite") \
-        .partitionBy("neighbourhood_group_cleansed") \
         .parquet(SILVER_PATH)
     
     print("ETL DONE")

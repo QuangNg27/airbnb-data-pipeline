@@ -1,0 +1,8 @@
+version: 2
+
+sources:
+  - name: raw
+    database: dev
+    schema: public
+    tables:
+      - name: raw_listings
