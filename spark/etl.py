@@ -14,7 +14,6 @@ secret = os.getenv("AWS_SECRET_ACCESS_KEY")
 
 BRONZE_PATH = f"s3a://{bucket}/raw/listings.csv"
 SILVER_PATH = f"s3a://{bucket}/processed/listings/"
-# GOLD_PATH = f"s3a://{bucket}/analytics/listings/"
 
 
 listing_schema = StructType([

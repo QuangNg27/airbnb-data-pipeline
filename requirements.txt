@@ -1,5 +1,5 @@
-pyspark==3.5.8
 boto3
 dbt-core
 dbt-redshift
-apache-airflow
+apache-airflow-providers-docker
+python-dotenv

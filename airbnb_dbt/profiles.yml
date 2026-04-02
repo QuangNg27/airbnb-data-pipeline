@@ -1,0 +1,14 @@
+airbnb_dbt:
+  outputs:
+    dev:
+      type: redshift
+      method: database
+      host: "{{ env_var('REDSHIFT_HOST') }}"
+      port: 5439
+      user: "{{ env_var('REDSHIFT_USER') }}"
+      password: "{{ env_var('REDSHIFT_PASSWORD') }}"
+      dbname: "{{ env_var('REDSHIFT_DBNAME', 'dev') }}"
+      schema: "{{ env_var('REDSHIFT_SCHEMA', 'analytics') }}"
+      threads: 4
+      sslmode: prefer
+  target: dev
