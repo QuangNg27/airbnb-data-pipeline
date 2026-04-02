@@ -1,13 +1,17 @@
-SELECT
+select
     id,
     name,
     host_id,
+
     neighbourhood_group_cleansed,
+    property_type,
     room_type,
 
-    CAST(price AS FLOAT) AS price,
+    price,
     accommodates,
+    bedrooms,
+    beds,
 
-    price / NULLIF(accommodates, 0) AS price_per_person
+    review_scores_rating
 
-FROM {{ source('raw', 'raw_listings') }}
+from {{ source('raw', 'raw_listings') }}

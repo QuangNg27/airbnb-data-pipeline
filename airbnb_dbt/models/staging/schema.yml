@@ -1,0 +1,35 @@
+version: 2
+
+models:
+  - name: stg_listings
+    description: "Cleaned Airbnb listings data"
+
+    columns:
+      - name: id
+        description: "Primary key"
+        tests:
+          - not_null
+          - unique
+
+      - name: name
+        description: "Tên của listing"
+        tests:
+          - not_null
+
+      - name: price
+        description: "Giá thuê"
+        tests:
+          - not_null
+
+      - name: room_type
+        description: "Loại nhà"
+        tests:
+          - not_null
+
+      - name: neighbourhood_group_cleansed
+        description: "Khu vực"
+        tests:
+          - not_null
+
+      - name: price_per_person
+        description: "Giá thuê trên mỗi người"
