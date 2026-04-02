@@ -16,7 +16,7 @@ with DAG(
     dag_id="airbnb_pipeline",
     default_args=default_args,
     start_date=datetime(2024, 1, 1),
-    schedule_interval=None,  # chạy thủ công trong UI, không tự schedule
+    schedule_interval=None,  # manual trigger in UI, not scheduled
     catchup=False,
     tags=["airbnb", "dbt"],
 ) as dag:
@@ -30,7 +30,7 @@ with DAG(
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge",
         mount_tmp_dir=False,
-        # Truyền AWS_* và S3_BUCKET từ env của container Airflow sang container Spark
+        # Pass AWS_* and S3_BUCKET from the Airflow container env to the Spark container
         environment={
             "AWS_ACCESS_KEY_ID": os.environ.get("AWS_ACCESS_KEY_ID"),
             "AWS_SECRET_ACCESS_KEY": os.environ.get("AWS_SECRET_ACCESS_KEY"),
@@ -48,7 +48,7 @@ with DAG(
         docker_url="unix://var/run/docker.sock",
         network_mode="bridge",
         mount_tmp_dir=False,
-        # Truyền DBT_PROFILES_DIR và các biến REDSHIFT_* từ env của Airflow sang container dbt
+        # Pass DBT_PROFILES_DIR and REDSHIFT_* variables from the Airflow container env to the dbt container
         environment={
             "DBT_PROFILES_DIR": "/opt/dbt",
             "REDSHIFT_HOST": os.environ.get("REDSHIFT_HOST"),

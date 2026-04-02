@@ -8,6 +8,15 @@ __pycache__/
 # virtual env
 venv/
 
+# editor / IDE
+.vscode/
+.idea/
+
+# tests / tools
+.pytest_cache/
+.mypy_cache/
+.coverage
+
 # airflow
 logs/
 
