@@ -22,8 +22,6 @@ The pipeline uses the following components:
 
 ## Data Flow
 
-(Medallion layers: Bronze → Silver → Gold)
-
 ```text
 S3 (raw CSV - bronze)
     ↓
@@ -37,6 +35,12 @@ dbt (dim + fact tables)
     ↓
 Analytics / BI
 ```
+
+---
+
+## Architecture Diagram
+
+![Data Pipeline Architecture](image/architecture.png)
 
 ---
 
