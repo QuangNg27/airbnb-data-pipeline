@@ -1,73 +1,144 @@
 # Airbnb Data Pipeline
 
-This project implements an end-to-end batch data pipeline for Airbnb listings data.
+## Overview
 
-The goal of the project is to demonstrate a modern **data engineering** stack on AWS, including:
+This is a personal data engineering project that builds an end-to-end batch data pipeline for Airbnb listings data.
 
-- **Apache Airflow** for workflow orchestration and scheduling
-- **Apache Spark (PySpark)** for scalable ETL from an S3 data lake (bronze → silver)
-- **dbt + Amazon Redshift** for ELT, SQL-based data modeling, and dimensional modeling (staging → marts, fact/dimension tables)
-- **Docker** for containerized, reproducible development environments
+The pipeline processes raw CSV data from a data lake, transforms it using Spark, and loads it into a data warehouse where dbt is used to create analytics-ready tables.
+
+---
 
 ## Architecture Overview
 
-- Airflow (webserver, scheduler, worker, triggerer, flower, Postgres, Redis) runs in Docker containers.
-- A Spark image (`airbnb_spark`) runs an ETL job that reads `listings.csv` from S3 and writes cleaned parquet files back to S3.
-- A dbt image (`airbnb_dbt`) runs `dbt run` to load data from S3/Redshift staging into mart tables in Redshift.
-- The Airflow DAG `airbnb_pipeline` has two tasks:
-  1. `spark_etl`: runs `spark-submit /opt/spark_jobs/etl.py` in the `airbnb_spark` container.
-  2. `dbt_run`: runs `dbt run` in the `airbnb_dbt` container.
+In this project, I used the following tools:
 
-Execution flow: `spark_etl` → `dbt_run`.
+* **Apache Airflow** to schedule and orchestrate the pipeline
+* **Apache Spark (PySpark)** to process raw data
+* **Amazon S3** as a data lake (store raw and processed data)
+* **dbt + Amazon Redshift** to transform data into analytics tables
+* **Docker** to run everything in a reproducible environment
+
+---
+
+## Data Flow
+
+```text
+S3 (raw CSV - bronze)
+    ↓
+Spark ETL (clean, transform)
+    ↓
+S3 (parquet - silver)
+    ↓
+Redshift (staging tables)
+    ↓
+dbt (dim + fact tables)
+    ↓
+Analytics / BI
+```
+
+---
 
 ## What I Built
 
-- A containerized **Airflow** for production-style orchestration.
-- A custom **Spark (PySpark)** ETL job that reads raw Airbnb listings from an S3 **data lake**, applies data cleaning and transformations, and writes partitioned parquet data back to S3 (bronze → silver).
-- A **dbt** project on **Amazon Redshift** that implements ELT and **dimensional modeling** (staging models, dimension tables, and fact tables) on top of the cleaned data.
-- An Airflow **DAG** that orchestrates the entire batch pipeline: Spark ETL → dbt models, using `DockerOperator` to run each step in its own container.
-- Environment-driven configuration with a `.env` file so **secrets management** and deployment to different environments are easier (no hard-coded AWS/Redshift credentials).
+* **Spark ETL Job**
 
-## Data Engineering Keywords / Highlights
+  * Reads raw CSV data from S3
+  * Handles data cleaning (nulls, types, inconsistent values)
+  * Writes optimized parquet files back to S3 (silver layer)
 
-- Batch data pipeline, orchestration, workflow scheduling
-- Data lake on S3 (bronze/silver layers), parquet storage
-- PySpark ETL, data cleaning, transformation
-- ELT with dbt, SQL-based transformations
-- Dimensional modeling, star schema, fact & dimension tables
-- Containerization with Docker
-- Environment-based configuration, secrets management
+* **dbt Project (Redshift)**
+
+  * Staging models to standardize raw data
+  * Transformation models to build fact and dimension tables
+
+* **Airflow DAG (`airbnb_pipeline`)**
+
+  * Orchestrates the pipeline
+  * Runs Spark ETL first, then dbt models
+  * Uses `DockerOperator` to isolate execution environments
+
+* **Docker Setup**
+
+  * Airflow, Spark, and dbt run in separate containers
+  * Ensures reproducibility across environments
+
+---
+
+## Data Modeling
+
+I implemented a simple **star schema**:
+
+* **Fact table:**
+
+  * `fact_listings`
+
+* **Dimension tables:**
+
+  * `dim_host`
+  * `dim_location`
+  * `dim_property_type`
+
+---
+
+## Airflow DAG
+
+The DAG `airbnb_pipeline` contains two main tasks:
+
+1. **spark_etl**
+
+   * Executes `spark-submit` inside the Spark container
+   * Processes raw data from S3 and writes parquet output
+
+2. **dbt_run**
+
+   * Executes `dbt run` inside the dbt container
+   * Builds staging and mart tables in Redshift
+
+Execution order:
+
+spark_etl → dbt_run
+
+---
 
 ## Project Structure
 
-- `docker-compose.yaml`: defines the Docker stack (Airflow, Postgres, Redis, Spark/dbt images).
-- `dags/airbnb_pipeline.py`: Airflow DAG orchestrating the Spark ETL and dbt runs.
-- `spark/`:
-  - `Dockerfile`: builds the `airbnb_spark` image (Spark + Hadoop AWS + pyspark + python-dotenv).
-  - `etl.py`: Spark job that reads data from S3 (bronze), cleans it, and writes parquet to S3 (silver).
-- `airbnb_dbt/`:
-  - `dbt_project.yml`: dbt project configuration.
-  - `profiles.yml`: dbt profile for Redshift, using `REDSHIFT_*` environment variables.
-  - `models/`: staging and mart models (dim/fact).
--- `data/listings.csv`: raw data file used as the input dataset (bronze layer before uploading to S3).
--- `requirements.txt`: Python dependencies for Airflow (dbt, Docker provider, boto3, dotenv, ...).
+* `docker-compose.yaml`: defines all services
+* `dags/`: Airflow DAG
+* `spark/`: Spark job
+* `airbnb_dbt/`: dbt project
+* `data/`: raw dataset
 
-## `airbnb_pipeline` DAG Details
+---
 
-- File: `dags/airbnb_pipeline.py`.
-- Uses `DockerOperator` (from `apache-airflow-providers-docker`) to:
-  - Start a `airbnb_spark:latest` container and run the Spark job.
-  - Start a `airbnb_dbt:latest` container and run `dbt run` with a volume mount of the dbt project directory into `/opt/dbt`.
-- Environment variables are read from the Airflow container using `os.environ` and passed into the Spark/dbt containers.
+## How to Run
 
-If you clone the project to a different path or use Linux/macOS, you only need to adapt the host directory that is mounted into the dbt container (see the `Mount` configuration in `airbnb_pipeline.py`).
+```bash
+git clone <repo-url>
+cd <repo>
+docker-compose up -d
+```
 
-## Technologies
+Then open Airflow at:
 
-- Apache Airflow 2.4.x (CeleryExecutor)
-- Apache Spark 3.5.x + Hadoop AWS (S3A)
-- dbt-core + dbt-redshift
-- Amazon S3, Amazon Redshift (cluster or serverless)
-- Docker, Docker Compose
+[http://localhost:8080](http://localhost:8080)
+
+Trigger DAG: `airbnb_pipeline`
+
+---
+
+## Technologies Used
+
+* Apache Airflow
+* Apache Spark (PySpark)
+* dbt
+* Amazon S3
+* Amazon Redshift
+* Docker
+
+---
+
+## Notes
+
+This project is built for learning purposes, so it simplifies some aspects of a real production system. However, it still follows the general structure of a modern data pipeline.
 
 ---
