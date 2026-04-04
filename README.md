@@ -1,4 +1,4 @@
-# Airbnb Data Pipeline (Student Project)
+# Airbnb Data Pipeline
 
 ## Overview
 
